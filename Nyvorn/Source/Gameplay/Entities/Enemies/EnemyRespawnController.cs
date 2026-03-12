@@ -8,17 +8,17 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
     {
         private readonly Texture2D enemyTexture;
         private readonly Vector2 spawnPosition;
-        private readonly int maxHealth;
+        private readonly EnemyConfig enemyConfig;
         private readonly float respawnDelay;
         private readonly bool respawnEnabled;
 
         private float respawnTimer = -1f;
 
-        public EnemyRespawnController(Texture2D enemyTexture, Vector2 spawnPosition, int maxHealth = 100, float respawnDelay = 3f, bool respawnEnabled = true)
+        public EnemyRespawnController(Texture2D enemyTexture, Vector2 spawnPosition, EnemyConfig enemyConfig, float respawnDelay = 3f, bool respawnEnabled = true)
         {
             this.enemyTexture = enemyTexture;
             this.spawnPosition = spawnPosition;
-            this.maxHealth = maxHealth;
+            this.enemyConfig = enemyConfig;
             this.respawnDelay = respawnDelay;
             this.respawnEnabled = respawnEnabled;
         }
@@ -59,7 +59,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
 
         private Enemy CreateEnemy()
         {
-            return new Enemy(enemyTexture, spawnPosition, maxHealth);
+            return new Enemy(enemyTexture, spawnPosition, enemyConfig);
         }
     }
 }

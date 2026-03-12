@@ -25,6 +25,18 @@
 /processorParam:TextureFormat=Color
 /build:blocks/dirt_block.png
 
+#begin blocks/fence.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:blocks/fence.png
+
 #begin blocks/sand_block.png
 /importer:TextureImporter
 /processor:TextureProcessor

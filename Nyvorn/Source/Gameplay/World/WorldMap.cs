@@ -59,13 +59,12 @@ namespace Nyvorn.Source.World
         public Point WorldToTile(Vector2 worldPos)
             => new Point((int)(worldPos.X / TileSize), (int)(worldPos.Y / TileSize));
 
-        public void GenerateFieldArena()
+        public void GenerateFieldArena(int groundY, int safeZoneStart, int safeZoneEnd, int entranceGateTileX, int arenaStartTileX)
         {
             for (int y = 0; y < Height; y++)
                 for (int x = 0; x < Width; x++)
                     _tiles[x, y] = TileType.Empty;
 
-            int groundY = Height - 4;
             for (int x = 0; x < Width; x++)
                 _tiles[x, groundY] = TileType.Dirt;
 
@@ -81,24 +80,15 @@ namespace Nyvorn.Source.World
                     _tiles[x, y] = TileType.Stone;
             }
 
-            const int safeZoneStart = 2;
-            const int safeZoneEnd = 13;
-            const int gateStart = 14;
-            const int arenaStart = 16;
-
             for (int x = safeZoneStart; x <= safeZoneEnd; x++)
                 _tiles[x, groundY] = TileType.Sand;
 
-            for (int x = gateStart; x < arenaStart; x++)
+            for (int x = entranceGateTileX - 1; x < arenaStartTileX; x++)
                 _tiles[x, groundY] = TileType.Stone;
 
-            for (int x = arenaStart; x < Width - 1; x++)
+            for (int x = arenaStartTileX; x < Width - 1; x++)
                 _tiles[x, groundY] = TileType.Dirt;
 
-            CreateFencePost(14, groundY, 3);
-            CreateFencePost(16, groundY, 3);
-            CreateFencePost(Width - 6, groundY, 3);
-            CreateFencePost(Width - 4, groundY, 3);
         }
 
         public void SetTextures(Texture2D dirt, Texture2D sand, Texture2D stone)
@@ -132,12 +122,6 @@ namespace Nyvorn.Source.World
                     spriteBatch.Draw(tex, GetTileBounds(x, y), Color.White);
                 }
             }
-        }
-
-        private void CreateFencePost(int x, int groundY, int height)
-        {
-            for (int y = groundY - 1; y >= Math.Max(0, groundY - height); y--)
-                _tiles[x, y] = TileType.Stone;
         }
     }
 }

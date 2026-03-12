@@ -26,17 +26,14 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
         public bool IsAlive => combat.IsAlive;
         public bool IsInvincible => combat.IsInvincible;
 
-        private const float DodgeSpeed = 230f;
-
         public const int SpriteW = 32;
         public const int SpriteH = 32;
         public const int HitW = 10;
         public const int HitH = 23;
 
-        private const float MoveSpeed = 90f;
-
         private int moveDir;
         private bool jumpPressed;
+        private readonly PlayerConfig config;
 
         private readonly Texture2D body;
         private readonly Texture2D handBack;
@@ -60,8 +57,10 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
             Texture2D bodyAttack,
             Texture2D legs,
             Texture2D handFrontWeaponRun,
-            Texture2D dodgeTexture)
+            Texture2D dodgeTexture,
+            PlayerConfig config)
         {
+            this.config = config;
             body = sheet;
             handBack = handBackBase;
             handFront = handFrontBase;
@@ -72,10 +71,10 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
             this.handFrontWeaponRun = handFrontWeaponRun;
             this.dodgeTexture = dodgeTexture;
 
-            motor = new PlayerMotor(startPositionPivotFoot);
+            motor = new PlayerMotor(startPositionPivotFoot, config);
             Texture2D emptyWeaponTexture = new Texture2D(sheet.GraphicsDevice, 1, 1);
             emptyWeaponTexture.SetData(new[] { Color.Transparent });
-            combat = new PlayerCombat(new NullWeapon(emptyWeaponTexture));
+            combat = new PlayerCombat(new NullWeapon(emptyWeaponTexture), config);
             playerAnimator = new PlayerAnimator();
             debugPixel = new Texture2D(sheet.GraphicsDevice, 1, 1);
             debugPixel.SetData(new[] { Color.Red });
@@ -91,7 +90,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
             combat.UpdateAttack(dt, moveDir, ref facingRight);
             playerAnimator.SetFacing(facingRight);
 
-            float horizontalVelocity = combat.IsDodging ? combat.DodgeDirection * DodgeSpeed : moveDir * MoveSpeed;
+            float horizontalVelocity = combat.IsDodging ? combat.DodgeDirection * config.DodgeSpeed : moveDir * config.MoveSpeed;
             motor.Update(dt, worldMap, horizontalVelocity);
 
             if (motor.IsGrounded && jumpPressed)

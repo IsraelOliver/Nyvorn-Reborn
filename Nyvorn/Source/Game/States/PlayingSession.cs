@@ -16,13 +16,13 @@ namespace Nyvorn.Source.Game.States
 {
     public sealed class PlayingSession
     {
-        private const int EntranceTriggerTileX = 15;
-        private const int EntranceBarrierTileX = 15;
-        private const int ExitBarrierTileX = 67;
-        private const int BarrierHeightTiles = 8;
+        private const int FenceFrameSize = 8;
+        private const int FenceNormalFrame = 0;
+        private const int GateOpenFrame = 1;
+        private const int GateClosedFrame = 2;
         private const float EncounterBannerDuration = 1.8f;
-        private const string BossName = "Guardiao do Campo";
 
+        public required EncounterArenaConfig ArenaConfig { get; init; }
         public required WorldMap WorldMap { get; init; }
         public required Player Player { get; init; }
         public required List<Enemy> Enemies { get; init; }
@@ -30,6 +30,7 @@ namespace Nyvorn.Source.Game.States
         public required Hotbar Hotbar { get; init; }
         public required Inventory Inventory { get; init; }
         public required Dictionary<ItemId, Texture2D> ItemTextures { get; init; }
+        public required Texture2D FenceTexture { get; init; }
         public required Dictionary<ItemId, Weapon> Weapons { get; init; }
         public required EnemyRespawnController EnemyRespawnController { get; init; }
         public required Camera2D Camera { get; init; }
@@ -69,6 +70,7 @@ namespace Nyvorn.Source.Game.States
         public void DrawWorld(SpriteBatch spriteBatch)
         {
             WorldMap.Draw(spriteBatch);
+            DrawArenaFences(spriteBatch);
 
             Player.Draw(spriteBatch);
             foreach (Enemy enemy in Enemies)
@@ -86,7 +88,7 @@ namespace Nyvorn.Source.Game.States
             HudRenderer.Draw(spriteBatch, Hotbar, SelectedHotbarIndex, Player.Health, Player.MaxHealth, screenWidth);
 
             if (EncounterStarted && TryGetBoss(out Enemy boss))
-                HudRenderer.DrawBossBar(spriteBatch, BossName, boss.Health, boss.MaxHealth, screenWidth, screenHeight);
+                HudRenderer.DrawBossBar(spriteBatch, ArenaConfig.BossName, boss.Health, boss.MaxHealth, screenWidth, screenHeight);
 
             float bannerAlpha = EncounterBannerDuration <= 0f ? 0f : MathHelper.Clamp(EncounterBannerTimer / EncounterBannerDuration, 0f, 1f);
             HudRenderer.DrawEncounterBanner(spriteBatch, "A luta comecou", screenWidth, screenHeight, bannerAlpha);
@@ -155,20 +157,20 @@ namespace Nyvorn.Source.Game.States
             if (EncounterStarted)
                 return;
 
-            float triggerWorldX = EntranceTriggerTileX * WorldMap.TileSize;
+            float triggerWorldX = ArenaConfig.EntranceTriggerTileX * WorldMap.TileSize;
             if (Player.Position.X < triggerWorldX)
                 return;
 
             EncounterStarted = true;
             EncounterBannerTimer = EncounterBannerDuration;
-            CloseBarrierColumn(EntranceBarrierTileX);
-            CloseBarrierColumn(ExitBarrierTileX);
+            CloseBarrierColumn(ArenaConfig.EntranceGateTileX);
+            CloseBarrierColumn(ArenaConfig.ExitGateTileX);
         }
 
         private void CloseBarrierColumn(int tileX)
         {
-            int groundY = WorldMap.Height - 4;
-            for (int y = groundY; y >= Math.Max(0, groundY - BarrierHeightTiles + 1); y--)
+            int groundY = ArenaConfig.GroundTileY;
+            for (int y = groundY; y >= Math.Max(0, groundY - ArenaConfig.BarrierHeightTiles + 1); y--)
                 WorldMap.SetTile(tileX, y, TileType.Stone);
         }
 
@@ -185,6 +187,36 @@ namespace Nyvorn.Source.Game.States
 
             boss = null;
             return false;
+        }
+
+        private void DrawArenaFences(SpriteBatch spriteBatch)
+        {
+            int groundY = ArenaConfig.GroundTileY;
+            int fenceY = (groundY * WorldMap.TileSize) - FenceFrameSize;
+
+            DrawFenceRun(spriteBatch, ArenaConfig.EntranceFenceStartTileX, ArenaConfig.EntranceFenceEndTileX, fenceY);
+            DrawGate(spriteBatch, ArenaConfig.EntranceGateTileX, fenceY, EncounterStarted);
+
+            DrawFenceRun(spriteBatch, ArenaConfig.ExitFenceStartTileX, ArenaConfig.ExitFenceEndTileX, fenceY);
+            DrawGate(spriteBatch, ArenaConfig.ExitGateTileX, fenceY, EncounterStarted);
+        }
+
+        private void DrawFenceRun(SpriteBatch spriteBatch, int startTileX, int endTileXExclusive, int y)
+        {
+            for (int x = startTileX; x < endTileXExclusive; x++)
+                DrawFenceFrame(spriteBatch, FenceNormalFrame, x * WorldMap.TileSize, y);
+        }
+
+        private void DrawGate(SpriteBatch spriteBatch, int tileX, int y, bool closed)
+        {
+            int frame = closed ? GateClosedFrame : GateOpenFrame;
+            DrawFenceFrame(spriteBatch, frame, tileX * WorldMap.TileSize, y);
+        }
+
+        private void DrawFenceFrame(SpriteBatch spriteBatch, int frameIndex, int x, int y)
+        {
+            Rectangle source = new Rectangle(frameIndex * FenceFrameSize, 0, FenceFrameSize, FenceFrameSize);
+            spriteBatch.Draw(FenceTexture, new Vector2(x, y), source, Color.White);
         }
     }
 }

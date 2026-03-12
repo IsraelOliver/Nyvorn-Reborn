@@ -6,15 +6,14 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
 {
     public sealed class PlayerMotor
     {
-        private const float JumpSpeed = 280f;
-        private const float GravityScale = 1f;
-
+        private readonly PlayerConfig config;
         private Vector2 position;
         private Vector2 velocity;
         private float knockbackVelocityX;
 
-        public PlayerMotor(Vector2 startPosition)
+        public PlayerMotor(Vector2 startPosition, PlayerConfig config)
         {
+            this.config = config;
             position = startPosition;
             velocity = Vector2.Zero;
             IsGrounded = false;
@@ -59,7 +58,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
             if (!IsGrounded)
                 return;
 
-            velocity.Y = -JumpSpeed;
+            velocity.Y = -config.JumpSpeed;
             IsGrounded = false;
         }
 
@@ -72,7 +71,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
 
         private void ApplyGravity(float dt)
         {
-            velocity.Y += PhysicsSettings.WorldGravity * GravityScale * dt;
+            velocity.Y += PhysicsSettings.WorldGravity * config.GravityScale * dt;
         }
 
         private void ResolveWorldCollisionsX(WorldMap worldMap, float velocityX)

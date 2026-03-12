@@ -5,23 +5,26 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
 {
     public sealed class EnemyMotor
     {
-        private const float MoveSpeed = 42f;
-
+        private readonly EnemyConfig config;
         private Vector2 position;
         private float velocityY;
         private float knockbackVelocityX;
         private float horizontalVelocity;
 
-        public EnemyMotor(Vector2 startPosition)
+        public EnemyMotor(Vector2 startPosition, EnemyConfig config)
         {
+            this.config = config;
             position = startPosition;
             velocityY = 0f;
             knockbackVelocityX = 0f;
+            IsGrounded = false;
         }
 
         public Vector2 Position => position;
         public float KnockbackVelocityX => knockbackVelocityX;
         public float HorizontalVelocity => horizontalVelocity;
+        public float VerticalVelocity => velocityY;
+        public bool IsGrounded { get; private set; }
 
         private float HitLeft => position.X - 8f;
         private float HitRight => HitLeft + 16f - 1f;
@@ -53,7 +56,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
                 velocityY = forceY;
         }
 
-        public float ResolveChaseVelocity(float targetX, bool isActive)
+        public float ResolveChaseVelocity(float targetX, bool isActive, bool enraged)
         {
             if (!isActive)
                 return 0f;
@@ -62,7 +65,17 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
             if (System.Math.Abs(delta) <= 6f)
                 return 0f;
 
-            return delta > 0f ? MoveSpeed : -MoveSpeed;
+            float moveSpeed = enraged ? config.EnragedMoveSpeed : config.BaseMoveSpeed;
+            return delta > 0f ? moveSpeed : -moveSpeed;
+        }
+
+        public void TryJump()
+        {
+            if (!IsGrounded)
+                return;
+
+            velocityY = -config.JumpSpeed;
+            IsGrounded = false;
         }
 
         private void ResolveWorldCollisionsX(WorldMap worldMap, float velocityX)
@@ -97,6 +110,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
 
         private void ResolveWorldCollisionsY(WorldMap worldMap, float prevHitBottom, float prevHitTop)
         {
+            IsGrounded = false;
             int ts = worldMap.TileSize;
 
             float left = HitLeft + 1;
@@ -115,6 +129,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
                     {
                         position.Y = y * ts;
                         velocityY = 0f;
+                        IsGrounded = true;
                         return;
                     }
                 }

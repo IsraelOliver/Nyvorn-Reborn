@@ -13,6 +13,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
         private float timer;
 
         public EnemyAnimState CurrentState => state;
+        public int FrameIndex => frameIndex;
 
         public EnemyAnimator(Dictionary<EnemyAnimState, EnemyAnimationClip> clips, EnemyAnimState startState = EnemyAnimState.Idle)
         {

@@ -19,23 +19,39 @@ namespace Nyvorn.Source.Game.States
         private readonly ContentManager content;
         private readonly VideoSettingsService videoSettings;
         private readonly Action exitGame;
-        private readonly PlayingSession session;
+        private readonly PlayingSessionFactory sessionFactory;
+        private PlayingSession session;
         private readonly InputService inputService = new();
         private bool deathStatePushed;
 
         public PlayingState(GraphicsDevice graphicsDevice, ContentManager content, StateMachine stateMachine, VideoSettingsService videoSettings, Action exitGame)
-            : this(graphicsDevice, content, stateMachine, videoSettings, exitGame, new PlayingSessionFactory(graphicsDevice, content).Create())
+            : this(
+                graphicsDevice,
+                content,
+                stateMachine,
+                videoSettings,
+                exitGame,
+                new PlayingSessionFactory(graphicsDevice, content),
+                null)
         {
         }
 
-        public PlayingState(GraphicsDevice graphicsDevice, ContentManager content, StateMachine stateMachine, VideoSettingsService videoSettings, Action exitGame, PlayingSession session)
+        public PlayingState(
+            GraphicsDevice graphicsDevice,
+            ContentManager content,
+            StateMachine stateMachine,
+            VideoSettingsService videoSettings,
+            Action exitGame,
+            PlayingSessionFactory sessionFactory,
+            PlayingSession session)
         {
             this.graphicsDevice = graphicsDevice;
             this.content = content;
             this.stateMachine = stateMachine;
             this.videoSettings = videoSettings;
             this.exitGame = exitGame;
-            this.session = session;
+            this.sessionFactory = sessionFactory;
+            this.session = session ?? sessionFactory.Create();
             deathStatePushed = false;
         }
 
@@ -95,13 +111,20 @@ namespace Nyvorn.Source.Game.States
 
         private void RetryFromDeath()
         {
-            RetrySession();
+            ResetSession();
+            stateMachine.PopState();
         }
 
         private void RetrySession()
         {
-            stateMachine.Clear();
-            stateMachine.PushState(new PlayingState(graphicsDevice, content, stateMachine, videoSettings, exitGame));
+            ResetSession();
+            stateMachine.PopState();
+        }
+
+        private void ResetSession()
+        {
+            session = sessionFactory.Create();
+            deathStatePushed = false;
         }
     }
 }

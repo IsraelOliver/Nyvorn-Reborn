@@ -26,13 +26,23 @@ namespace Nyvorn.Source.Game.States
 
         public PlayingSession Create()
         {
+            EncounterArenaConfig arenaConfig = new();
+            PlayerConfig playerConfig = new();
+            EnemyConfig enemyConfig = new();
+
             Texture2D dirt = content.Load<Texture2D>("blocks/dirt_block");
             Texture2D sand = content.Load<Texture2D>("blocks/sand_block");
             Texture2D stone = content.Load<Texture2D>("blocks/stone_block");
+            Texture2D fence = content.Load<Texture2D>("blocks/fence");
 
-            WorldMap worldMap = new WorldMap(72, 34, 8);
+            WorldMap worldMap = new WorldMap(arenaConfig.WorldSizeTiles.X, arenaConfig.WorldSizeTiles.Y, arenaConfig.TileSize);
             worldMap.SetTextures(dirt, sand, stone);
-            worldMap.GenerateFieldArena();
+            worldMap.GenerateFieldArena(
+                arenaConfig.GroundTileY,
+                arenaConfig.SafeZoneStartTileX,
+                arenaConfig.SafeZoneEndTileX,
+                arenaConfig.EntranceGateTileX,
+                arenaConfig.ArenaStartTileX);
 
             Texture2D backHandTexture = content.Load<Texture2D>("entities/player/handBackTexture_base");
             Texture2D bodyTexture = content.Load<Texture2D>("entities/player/bodyTexture_base");
@@ -59,7 +69,7 @@ namespace Nyvorn.Source.Game.States
             };
 
             Player player = new Player(
-                new Vector2(52, 240),
+                arenaConfig.PlayerSpawn,
                 bodyTexture,
                 backHandTexture,
                 frontHandTexture,
@@ -68,20 +78,22 @@ namespace Nyvorn.Source.Game.States
                 attackBodyTexture,
                 legsTexture,
                 handFrontWeaponRun,
-                playerDodgeTexture);
+                playerDodgeTexture,
+                playerConfig);
 
             List<Enemy> enemies = new();
-            EnemyRespawnController enemyRespawnController = new EnemyRespawnController(enemyTexture, new Vector2(472, 240), maxHealth: 500, respawnEnabled: false);
+            EnemyRespawnController enemyRespawnController = new EnemyRespawnController(enemyTexture, arenaConfig.BossSpawn, enemyConfig, respawnEnabled: false);
             enemyRespawnController.SpawnInitial(enemies);
             List<WorldItem> worldItems = new()
             {
-                new WorldItem(ItemDefinitions.Get(ItemId.ShortStick), shortStickTexture, new Vector2(92, 220))
+                new WorldItem(ItemDefinitions.Get(ItemId.ShortStick), shortStickTexture, arenaConfig.InitialWeaponSpawn)
             };
             Hotbar hotbar = new Hotbar(2);
             Inventory inventory = new Inventory(10);
 
             return new PlayingSession
             {
+                ArenaConfig = arenaConfig,
                 WorldMap = worldMap,
                 Player = player,
                 Enemies = enemies,
@@ -89,6 +101,7 @@ namespace Nyvorn.Source.Game.States
                 Hotbar = hotbar,
                 Inventory = inventory,
                 ItemTextures = itemTextures,
+                FenceTexture = fence,
                 Weapons = weapons,
                 EnemyRespawnController = enemyRespawnController,
                 Camera = new Camera2D(),
