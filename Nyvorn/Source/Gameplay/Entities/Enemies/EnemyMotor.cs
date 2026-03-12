@@ -5,9 +5,12 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
 {
     public sealed class EnemyMotor
     {
+        private const float MoveSpeed = 42f;
+
         private Vector2 position;
         private float velocityY;
         private float knockbackVelocityX;
+        private float horizontalVelocity;
 
         public EnemyMotor(Vector2 startPosition)
         {
@@ -18,6 +21,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
 
         public Vector2 Position => position;
         public float KnockbackVelocityX => knockbackVelocityX;
+        public float HorizontalVelocity => horizontalVelocity;
 
         private float HitLeft => position.X - 8f;
         private float HitRight => HitLeft + 16f - 1f;
@@ -26,12 +30,15 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
 
         public Rectangle Hurtbox => new Rectangle((int)HitLeft, (int)HitTop, 16, 24);
 
-        public void Update(float dt, WorldMap worldMap)
+        public void Update(float dt, WorldMap worldMap, float desiredVelocityX)
         {
             float prevHitBottom = HitBottom;
             float prevHitTop = HitTop;
 
-            position.X += knockbackVelocityX * dt;
+            float totalVelocityX = desiredVelocityX + knockbackVelocityX;
+            horizontalVelocity = totalVelocityX;
+            position.X += totalVelocityX * dt;
+            ResolveWorldCollisionsX(worldMap, totalVelocityX);
             knockbackVelocityX = MathHelper.Lerp(knockbackVelocityX, 0f, MathHelper.Clamp(dt * 10f, 0f, 1f));
 
             velocityY += 800f * dt;
@@ -44,6 +51,48 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
             knockbackVelocityX = forceX;
             if (forceY < velocityY)
                 velocityY = forceY;
+        }
+
+        public float ResolveChaseVelocity(float targetX, bool isActive)
+        {
+            if (!isActive)
+                return 0f;
+
+            float delta = targetX - position.X;
+            if (System.Math.Abs(delta) <= 6f)
+                return 0f;
+
+            return delta > 0f ? MoveSpeed : -MoveSpeed;
+        }
+
+        private void ResolveWorldCollisionsX(WorldMap worldMap, float velocityX)
+        {
+            int ts = worldMap.TileSize;
+            float top = HitTop + 1f;
+            float bottom = HitBottom - 1f;
+            int tileYTop = (int)(top / ts);
+            int tileYBottom = (int)(bottom / ts);
+
+            if (velocityX > 0f)
+            {
+                int tileX = (int)(HitRight / ts);
+                if (worldMap.IsSolidAt(tileX, tileYTop) || worldMap.IsSolidAt(tileX, tileYBottom))
+                {
+                    float tileLeft = tileX * ts;
+                    position.X = tileLeft - 8f;
+                    knockbackVelocityX = 0f;
+                }
+            }
+            else if (velocityX < 0f)
+            {
+                int tileX = (int)(HitLeft / ts);
+                if (worldMap.IsSolidAt(tileX, tileYTop) || worldMap.IsSolidAt(tileX, tileYBottom))
+                {
+                    float tileRight = tileX * ts + ts;
+                    position.X = tileRight + 8f;
+                    knockbackVelocityX = 0f;
+                }
+            }
         }
 
         private void ResolveWorldCollisionsY(WorldMap worldMap, float prevHitBottom, float prevHitTop)

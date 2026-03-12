@@ -28,6 +28,52 @@ namespace Nyvorn.Source.Gameplay.UI
             DrawPlayerHealth(spriteBatch, currentHealth, maxHealth, screenWidth);
         }
 
+        public void DrawBossBar(SpriteBatch spriteBatch, string bossName, int currentHealth, int maxHealth, int screenWidth, int screenHeight)
+        {
+            const int width = 360;
+            const int height = 18;
+            int x = (screenWidth - width) / 2;
+            int y = screenHeight - 42;
+
+            float ratio = maxHealth <= 0 ? 0f : MathHelper.Clamp((float)currentHealth / maxHealth, 0f, 1f);
+            int fill = (int)(width * ratio);
+
+            spriteBatch.Draw(pixel, new Rectangle(x - 3, y - 3, width + 6, height + 6), Color.Black * 0.9f);
+            spriteBatch.Draw(pixel, new Rectangle(x, y, width, height), new Color(48, 48, 48, 240));
+            if (fill > 0)
+                spriteBatch.Draw(pixel, new Rectangle(x, y, fill, height), new Color(148, 28, 36));
+
+            Vector2 titleSize = font.MeasureString(bossName);
+            Vector2 titlePos = new Vector2(x + (width - titleSize.X) * 0.5f, y - titleSize.Y - 4f);
+            spriteBatch.DrawString(font, bossName, titlePos + new Vector2(1f, 1f), Color.Black);
+            spriteBatch.DrawString(font, bossName, titlePos, Color.White);
+
+            string value = $"{currentHealth}/{maxHealth}";
+            Vector2 valueSize = font.MeasureString(value);
+            Vector2 valuePos = new Vector2(x + (width - valueSize.X) * 0.5f, y + (height - valueSize.Y) * 0.5f - 1f);
+            spriteBatch.DrawString(font, value, valuePos + new Vector2(1f, 1f), Color.Black);
+            spriteBatch.DrawString(font, value, valuePos, Color.White);
+        }
+
+        public void DrawEncounterBanner(SpriteBatch spriteBatch, string text, int screenWidth, int screenHeight, float alpha)
+        {
+            if (alpha <= 0f)
+                return;
+
+            Vector2 textSize = font.MeasureString(text);
+            Rectangle panel = new Rectangle(
+                (int)((screenWidth - (textSize.X + 40f)) * 0.5f),
+                (int)(screenHeight * 0.18f),
+                (int)(textSize.X + 40f),
+                (int)(textSize.Y + 18f));
+
+            spriteBatch.Draw(pixel, panel, Color.Black * (0.65f * alpha));
+            spriteBatch.Draw(pixel, new Rectangle(panel.X - 2, panel.Y - 2, panel.Width + 4, panel.Height + 4), new Color(212, 190, 108) * alpha);
+            Vector2 textPos = new Vector2(panel.X + (panel.Width - textSize.X) * 0.5f, panel.Y + (panel.Height - textSize.Y) * 0.5f);
+            spriteBatch.DrawString(font, text, textPos + new Vector2(1f, 1f), Color.Black * alpha);
+            spriteBatch.DrawString(font, text, textPos, Color.White * alpha);
+        }
+
         public Rectangle GetInventoryPanelBounds(int screenWidth, int screenHeight)
         {
             const int padding = 14;

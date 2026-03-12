@@ -14,7 +14,7 @@ namespace Nyvorn.Source.World
         private Texture2D _sand;
         private Texture2D _stone;
 
-        private readonly TileType[,] _tiles; // grade de tiles (x, y)
+        private readonly TileType[,] _tiles;
 
         public WorldMap(int width, int height, int tileSize)
         {
@@ -25,7 +25,7 @@ namespace Nyvorn.Source.World
             _tiles = new TileType[Width, Height];
         }
 
-        public TileType GetTile(int x, int y) // essa função é para acessar o tipo de tile em (x, y)
+        public TileType GetTile(int x, int y)
         {
             if (!InBounds(x, y))
                 return TileType.Empty;
@@ -33,7 +33,7 @@ namespace Nyvorn.Source.World
             return _tiles[x, y];
         }
 
-        public void SetTile(int x, int y, TileType type) // essa função é para modificar o tipo de tile em (x, y)
+        public void SetTile(int x, int y, TileType type)
         {
             if (!InBounds(x, y))
                 return;
@@ -41,52 +41,64 @@ namespace Nyvorn.Source.World
             _tiles[x, y] = type;
         }
 
-        public bool InBounds(int x, int y) // verifica se (x, y) está dentro dos limites do mapa
+        public bool InBounds(int x, int y)
             => x >= 0 && y >= 0 && x < Width && y < Height;
 
-        public bool IsSolid(TileType t) // verifica se um tipo de tile é sólido (colisível)
+        public bool IsSolid(TileType t)
         {
             return t == TileType.Dirt
                 || t == TileType.Stone
                 || t == TileType.Sand;
         }
 
-        public bool IsSolidAt(int x, int y) => IsSolid(GetTile(x, y)); // verifica se o tile em (x, y) é sólido diferente de IsSolid, que recebe o tipo do tile, essa função recebe as coordenadas e já retorna se é sólido ou não
+        public bool IsSolidAt(int x, int y) => IsSolid(GetTile(x, y));
 
-        public Rectangle GetTileBounds(int x, int y) // retorna os limites em pixels do tile em (x, y) (útil pra desenhar e colisão)
+        public Rectangle GetTileBounds(int x, int y)
             => new Rectangle(x * TileSize, y * TileSize, TileSize, TileSize);
 
-        public Point WorldToTile(Vector2 worldPos) // converte uma posição em pixels para coordenadas de tile, ou seja, dado um ponto no mundo, retorna qual tile ele corresponde
+        public Point WorldToTile(Vector2 worldPos)
             => new Point((int)(worldPos.X / TileSize), (int)(worldPos.Y / TileSize));
 
-        public void GenerateTest()
+        public void GenerateFieldArena()
         {
-            // limpa tudo (Empty)
             for (int y = 0; y < Height; y++)
                 for (int x = 0; x < Width; x++)
                     _tiles[x, y] = TileType.Empty;
 
-            // cria chão
-            int groundY = Height - 3;
+            int groundY = Height - 4;
             for (int x = 0; x < Width; x++)
                 _tiles[x, groundY] = TileType.Dirt;
 
-            // plataforma
-            for (int x = 10; x < 20; x++)
-                _tiles[x, groundY - 5] = TileType.Stone;
-
-            for (int x = 25; x < 40; x++)
-                _tiles[x, groundY - 10] = TileType.Sand;
-
-            for (int x = 45; x < 70; x++)
-                _tiles[x, groundY - 15] = TileType.Dirt;
-
-            // parede esquerda e direita (só pra teste)
             for (int y = 0; y < Height; y++)
             {
                 _tiles[0, y] = TileType.Stone;
                 _tiles[Width - 1, y] = TileType.Stone;
             }
+
+            for (int y = groundY + 1; y < Height; y++)
+            {
+                for (int x = 1; x < Width - 1; x++)
+                    _tiles[x, y] = TileType.Stone;
+            }
+
+            const int safeZoneStart = 2;
+            const int safeZoneEnd = 13;
+            const int gateStart = 14;
+            const int arenaStart = 16;
+
+            for (int x = safeZoneStart; x <= safeZoneEnd; x++)
+                _tiles[x, groundY] = TileType.Sand;
+
+            for (int x = gateStart; x < arenaStart; x++)
+                _tiles[x, groundY] = TileType.Stone;
+
+            for (int x = arenaStart; x < Width - 1; x++)
+                _tiles[x, groundY] = TileType.Dirt;
+
+            CreateFencePost(14, groundY, 3);
+            CreateFencePost(16, groundY, 3);
+            CreateFencePost(Width - 6, groundY, 3);
+            CreateFencePost(Width - 4, groundY, 3);
         }
 
         public void SetTextures(Texture2D dirt, Texture2D sand, Texture2D stone)
@@ -102,23 +114,30 @@ namespace Nyvorn.Source.World
             {
                 for (int x = 0; x < Width; x++)
                 {
-                    var t = GetTile(x, y);
+                    TileType t = GetTile(x, y);
                     if (t == TileType.Empty)
                         continue;
 
                     Texture2D tex = t switch
                     {
-                        TileType.Dirt  => _dirt,
-                        TileType.Sand  => _sand,
+                        TileType.Dirt => _dirt,
+                        TileType.Sand => _sand,
                         TileType.Stone => _stone,
                         _ => null
                     };
 
-                    if (tex == null) continue;
+                    if (tex == null)
+                        continue;
 
                     spriteBatch.Draw(tex, GetTileBounds(x, y), Color.White);
                 }
             }
+        }
+
+        private void CreateFencePost(int x, int groundY, int height)
+        {
+            for (int y = groundY - 1; y >= Math.Max(0, groundY - height); y--)
+                _tiles[x, y] = TileType.Stone;
         }
     }
 }

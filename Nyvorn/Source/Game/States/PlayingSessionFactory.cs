@@ -30,9 +30,9 @@ namespace Nyvorn.Source.Game.States
             Texture2D sand = content.Load<Texture2D>("blocks/sand_block");
             Texture2D stone = content.Load<Texture2D>("blocks/stone_block");
 
-            WorldMap worldMap = new WorldMap(100, 50, 8);
+            WorldMap worldMap = new WorldMap(72, 34, 8);
             worldMap.SetTextures(dirt, sand, stone);
-            worldMap.GenerateTest();
+            worldMap.GenerateFieldArena();
 
             Texture2D backHandTexture = content.Load<Texture2D>("entities/player/handBackTexture_base");
             Texture2D bodyTexture = content.Load<Texture2D>("entities/player/bodyTexture_base");
@@ -59,7 +59,7 @@ namespace Nyvorn.Source.Game.States
             };
 
             Player player = new Player(
-                new Vector2(90, 50),
+                new Vector2(52, 240),
                 bodyTexture,
                 backHandTexture,
                 frontHandTexture,
@@ -71,11 +71,11 @@ namespace Nyvorn.Source.Game.States
                 playerDodgeTexture);
 
             List<Enemy> enemies = new();
-            EnemyRespawnController enemyRespawnController = new EnemyRespawnController(enemyTexture, new Vector2(118, 50));
+            EnemyRespawnController enemyRespawnController = new EnemyRespawnController(enemyTexture, new Vector2(472, 240), maxHealth: 500, respawnEnabled: false);
             enemyRespawnController.SpawnInitial(enemies);
             List<WorldItem> worldItems = new()
             {
-                new WorldItem(ItemDefinitions.Get(ItemId.ShortStick), shortStickTexture, new Vector2(140, 30))
+                new WorldItem(ItemDefinitions.Get(ItemId.ShortStick), shortStickTexture, new Vector2(92, 220))
             };
             Hotbar hotbar = new Hotbar(2);
             Inventory inventory = new Inventory(10);

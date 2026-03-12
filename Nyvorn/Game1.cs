@@ -12,10 +12,13 @@ public class Game1 : Game
     private SpriteBatch _spriteBatch;
 
     private StateMachine _stateMachine;
+    private VideoSettingsService _videoSettings;
 
     public Game1()
     {
         _graphics = new GraphicsDeviceManager(this);
+        _graphics.PreferredBackBufferWidth = 1280;
+        _graphics.PreferredBackBufferHeight = 720;
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
     }
@@ -29,12 +32,13 @@ public class Game1 : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _stateMachine = new StateMachine();
-        _stateMachine.PushState(new PlayingState(GraphicsDevice, Content, _stateMachine));
+        _videoSettings = new VideoSettingsService(_graphics);
+        _stateMachine.PushState(new PlayingState(GraphicsDevice, Content, _stateMachine, _videoSettings, Exit));
     }
 
     protected override void Update(GameTime gameTime)
     {
-        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
             Exit();
 
         _stateMachine.Update(gameTime);

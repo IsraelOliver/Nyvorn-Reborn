@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Nyvorn.Source.Engine.Input;
 using Nyvorn.Source.Game;
+using System;
 
 namespace Nyvorn.Source.Game.States
 {
@@ -16,20 +17,24 @@ namespace Nyvorn.Source.Game.States
         private readonly GraphicsDevice graphicsDevice;
         private readonly StateMachine stateMachine;
         private readonly ContentManager content;
+        private readonly VideoSettingsService videoSettings;
+        private readonly Action exitGame;
         private readonly PlayingSession session;
         private readonly InputService inputService = new();
         private bool deathStatePushed;
 
-        public PlayingState(GraphicsDevice graphicsDevice, ContentManager content, StateMachine stateMachine)
-            : this(graphicsDevice, content, stateMachine, new PlayingSessionFactory(graphicsDevice, content).Create())
+        public PlayingState(GraphicsDevice graphicsDevice, ContentManager content, StateMachine stateMachine, VideoSettingsService videoSettings, Action exitGame)
+            : this(graphicsDevice, content, stateMachine, videoSettings, exitGame, new PlayingSessionFactory(graphicsDevice, content).Create())
         {
         }
 
-        public PlayingState(GraphicsDevice graphicsDevice, ContentManager content, StateMachine stateMachine, PlayingSession session)
+        public PlayingState(GraphicsDevice graphicsDevice, ContentManager content, StateMachine stateMachine, VideoSettingsService videoSettings, Action exitGame, PlayingSession session)
         {
             this.graphicsDevice = graphicsDevice;
             this.content = content;
             this.stateMachine = stateMachine;
+            this.videoSettings = videoSettings;
+            this.exitGame = exitGame;
             this.session = session;
             deathStatePushed = false;
         }
@@ -48,6 +53,13 @@ namespace Nyvorn.Source.Game.States
             InputState input = inputService.Update();
             if (input.OpenInventoryPressed && stateMachine.CurrentState is not InventoryState)
                 stateMachine.PushState(new InventoryState(graphicsDevice, stateMachine, session));
+
+            bool inventoryOpen = stateMachine.CurrentState is InventoryState;
+            if (input.OpenPausePressed && !inventoryOpen && stateMachine.CurrentState == this)
+            {
+                stateMachine.PushState(new PauseState(graphicsDevice, content, stateMachine, RetrySession, videoSettings, exitGame));
+                return;
+            }
 
             if (stateMachine.CurrentState is InventoryState inventoryState &&
                 inventoryState.ContainsMouse(Mouse.GetState().Position))
@@ -75,15 +87,21 @@ namespace Nyvorn.Source.Game.States
             spriteBatch.End();
 
             int screenW = graphicsDevice.PresentationParameters.BackBufferWidth;
+            int screenH = graphicsDevice.PresentationParameters.BackBufferHeight;
             spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-            session.DrawHud(spriteBatch, screenW);
+            session.DrawHud(spriteBatch, screenW, screenH);
             spriteBatch.End();
         }
 
         private void RetryFromDeath()
         {
+            RetrySession();
+        }
+
+        private void RetrySession()
+        {
             stateMachine.Clear();
-            stateMachine.PushState(new PlayingState(graphicsDevice, content, stateMachine));
+            stateMachine.PushState(new PlayingState(graphicsDevice, content, stateMachine, videoSettings, exitGame));
         }
     }
 }

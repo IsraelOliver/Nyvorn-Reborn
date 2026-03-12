@@ -19,8 +19,9 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
 
         public Vector2 Position => motor.Position;
         public bool IsAlive => combat.IsAlive;
-        bool IHitSource.HasActiveHitbox => IsAlive;
-        Rectangle IHitSource.ActiveHitbox => IsAlive ? Hurtbox : Rectangle.Empty;
+        public bool IsActive { get; private set; }
+        bool IHitSource.HasActiveHitbox => IsAlive && IsActive;
+        Rectangle IHitSource.ActiveHitbox => IsAlive && IsActive ? Hurtbox : Rectangle.Empty;
         int IHitSource.HitSequence => 0;
         public int Health => combat.Health;
         public int MaxHealth => combat.MaxHealth;
@@ -41,10 +42,12 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
             animator = new EnemyAnimator(EnemyTestAnimations.Create(), EnemyAnimState.Idle);
         }
 
-        public void Update(float dt, WorldMap worldMap)
+        public void Update(float dt, WorldMap worldMap, Vector2 playerPosition, bool isActive)
         {
+            IsActive = isActive;
             combat.Tick(dt);
-            motor.Update(dt, worldMap);
+            float desiredVelocityX = motor.ResolveChaseVelocity(playerPosition.X, IsActive);
+            motor.Update(dt, worldMap, desiredVelocityX);
 
             EnemyAnimState state = ResolveAnimState();
             animator.Play(state);
@@ -90,7 +93,7 @@ namespace Nyvorn.Source.Gameplay.Entities.Enemies
             if (combat.AttackTimer > 0f)
                 return EnemyAnimState.Attack;
 
-            bool isMoving = Math.Abs(motor.KnockbackVelocityX) > 8f;
+            bool isMoving = IsActive && Math.Abs(motor.HorizontalVelocity) > 8f;
             if (isMoving)
                 return EnemyAnimState.Move;
 

@@ -9,12 +9,20 @@ using Nyvorn.Source.Gameplay.Entities.Player;
 using Nyvorn.Source.Gameplay.Items;
 using Nyvorn.Source.Gameplay.UI;
 using Nyvorn.Source.World;
+using System;
 using System.Collections.Generic;
 
 namespace Nyvorn.Source.Game.States
 {
     public sealed class PlayingSession
     {
+        private const int EntranceTriggerTileX = 15;
+        private const int EntranceBarrierTileX = 15;
+        private const int ExitBarrierTileX = 67;
+        private const int BarrierHeightTiles = 8;
+        private const float EncounterBannerDuration = 1.8f;
+        private const string BossName = "Guardiao do Campo";
+
         public required WorldMap WorldMap { get; init; }
         public required Player Player { get; init; }
         public required List<Enemy> Enemies { get; init; }
@@ -29,6 +37,8 @@ namespace Nyvorn.Source.Game.States
         public required HudRenderer HudRenderer { get; init; }
         public required CombatSystem CombatSystem { get; init; }
         public int SelectedHotbarIndex { get; private set; }
+        public bool EncounterStarted { get; private set; }
+        public float EncounterBannerTimer { get; private set; }
 
         public void Update(float dt, InputState input, Vector2 mouseWorld)
         {
@@ -38,15 +48,21 @@ namespace Nyvorn.Source.Game.States
             SyncEquippedWeapon();
             Player.Update(dt, WorldMap, input, mouseWorld);
 
+            if (EncounterBannerTimer > 0f)
+                EncounterBannerTimer = Math.Max(0f, EncounterBannerTimer - dt);
+
             for (int i = Enemies.Count - 1; i >= 0; i--)
-                Enemies[i].Update(dt, WorldMap);
+                Enemies[i].Update(dt, WorldMap, Player.Position, EncounterStarted);
             for (int i = WorldItems.Count - 1; i >= 0; i--)
             {
                 WorldItems[i].Update(dt, WorldMap);
                 TryCollectWorldItem(i);
             }
 
-            CombatSystem.Resolve(Player, Enemies);
+            TryStartEncounter();
+
+            if (EncounterStarted)
+                CombatSystem.Resolve(Player, Enemies);
             EnemyRespawnController.Update(dt, Enemies);
         }
 
@@ -65,9 +81,15 @@ namespace Nyvorn.Source.Game.States
                 worldItem.Draw(spriteBatch);
         }
 
-        public void DrawHud(SpriteBatch spriteBatch, int screenWidth)
+        public void DrawHud(SpriteBatch spriteBatch, int screenWidth, int screenHeight)
         {
             HudRenderer.Draw(spriteBatch, Hotbar, SelectedHotbarIndex, Player.Health, Player.MaxHealth, screenWidth);
+
+            if (EncounterStarted && TryGetBoss(out Enemy boss))
+                HudRenderer.DrawBossBar(spriteBatch, BossName, boss.Health, boss.MaxHealth, screenWidth, screenHeight);
+
+            float bannerAlpha = EncounterBannerDuration <= 0f ? 0f : MathHelper.Clamp(EncounterBannerTimer / EncounterBannerDuration, 0f, 1f);
+            HudRenderer.DrawEncounterBanner(spriteBatch, "A luta comecou", screenWidth, screenHeight, bannerAlpha);
         }
 
         public void DrawInventory(SpriteBatch spriteBatch, int screenWidth, int screenHeight)
@@ -126,6 +148,43 @@ namespace Nyvorn.Source.Game.States
 
             if (Hotbar.TryAdd(worldItem.Definition) || Inventory.TryAdd(worldItem.Definition))
                 WorldItems.RemoveAt(index);
+        }
+
+        private void TryStartEncounter()
+        {
+            if (EncounterStarted)
+                return;
+
+            float triggerWorldX = EntranceTriggerTileX * WorldMap.TileSize;
+            if (Player.Position.X < triggerWorldX)
+                return;
+
+            EncounterStarted = true;
+            EncounterBannerTimer = EncounterBannerDuration;
+            CloseBarrierColumn(EntranceBarrierTileX);
+            CloseBarrierColumn(ExitBarrierTileX);
+        }
+
+        private void CloseBarrierColumn(int tileX)
+        {
+            int groundY = WorldMap.Height - 4;
+            for (int y = groundY; y >= Math.Max(0, groundY - BarrierHeightTiles + 1); y--)
+                WorldMap.SetTile(tileX, y, TileType.Stone);
+        }
+
+        private bool TryGetBoss(out Enemy boss)
+        {
+            for (int i = 0; i < Enemies.Count; i++)
+            {
+                if (Enemies[i].IsAlive)
+                {
+                    boss = Enemies[i];
+                    return true;
+                }
+            }
+
+            boss = null;
+            return false;
         }
     }
 }
