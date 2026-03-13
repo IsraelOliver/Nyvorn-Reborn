@@ -1,0 +1,32 @@
+{
+  "WorldSizeTiles": {
+    "X": 72,
+    "Y": 34
+  },
+  "TileSize": 8,
+  "GroundOffsetFromBottom": 4,
+  "SafeZoneStartTileX": 2,
+  "SafeZoneEndTileX": 13,
+  "EntranceGateTileX": 15,
+  "EntranceTriggerTileX": 18,
+  "ArenaStartTileX": 16,
+  "ExitGateTileX": 67,
+  "BarrierHeightTiles": 8,
+  "EntranceFenceStartTileX": 11,
+  "EntranceFenceEndTileX": 14,
+  "ExitFenceStartTileX": 65,
+  "ExitFenceEndTileX": 67,
+  "PlayerSpawn": {
+    "X": 52,
+    "Y": 240
+  },
+  "BossSpawn": {
+    "X": 472,
+    "Y": 240
+  },
+  "InitialWeaponSpawn": {
+    "X": 92,
+    "Y": 220
+  },
+  "BossName": "Guardiao do Campo"
+}

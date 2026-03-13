@@ -46,6 +46,7 @@ namespace Nyvorn.Source.Game.States
             if (input.HotbarSelectionIndex >= 0 && input.HotbarSelectionIndex < Hotbar.Capacity)
                 SelectedHotbarIndex = input.HotbarSelectionIndex;
 
+            TryUseSelectedItem(input);
             SyncEquippedWeapon();
             Player.Update(dt, WorldMap, input, mouseWorld);
 
@@ -137,6 +138,29 @@ namespace Nyvorn.Source.Game.States
                 weapon = Weapons[ItemId.None];
 
             Player.SetEquippedWeapon(weapon);
+        }
+
+        private void TryUseSelectedItem(InputState input)
+        {
+            if (!input.UseSelectedItemPressed)
+                return;
+
+            InventorySlot selectedSlot = Hotbar.GetSlot(SelectedHotbarIndex);
+            if (selectedSlot.IsEmpty)
+                return;
+
+            if (!ItemDefinitions.TryGet(selectedSlot.ItemId, out ItemDefinition definition))
+                return;
+
+            if (definition.UseType != ItemUseType.Consumable)
+                return;
+
+            bool consumed = false;
+            if (definition.HealAmount > 0)
+                consumed = Player.TryHeal(definition.HealAmount);
+
+            if (consumed)
+                selectedSlot.RemoveOne();
         }
 
         private void TryCollectWorldItem(int index)

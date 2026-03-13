@@ -33,7 +33,7 @@ public class Game1 : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _stateMachine = new StateMachine();
         _videoSettings = new VideoSettingsService(_graphics);
-        _stateMachine.PushState(new PlayingState(GraphicsDevice, Content, _stateMachine, _videoSettings, Exit));
+        _stateMachine.PushState(new MainMenuState(GraphicsDevice, Content, _stateMachine, _videoSettings, Exit));
     }
 
     protected override void Update(GameTime gameTime)

@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Nyvorn.Source.Data.Serialization;
 using Nyvorn.Source.Engine.Graphics;
 using Nyvorn.Source.Gameplay.Combat;
 using Nyvorn.Source.Gameplay.Combat.Weapons;
@@ -26,9 +27,10 @@ namespace Nyvorn.Source.Game.States
 
         public PlayingSession Create()
         {
-            EncounterArenaConfig arenaConfig = new();
-            PlayerConfig playerConfig = new();
-            EnemyConfig enemyConfig = new();
+            EncounterArenaConfig arenaConfig = JsonLoader.LoadFromFile<EncounterArenaConfig>("Data\\Configs\\EncounterArenaConfig.json").Normalize();
+            PlayerConfig playerConfig = JsonLoader.LoadFromFile<PlayerConfig>("Data\\Configs\\PlayerConfig.json");
+            EnemyConfig enemyConfig = JsonLoader.LoadFromFile<EnemyConfig>("Data\\Configs\\EnemyConfig.json");
+            ShortStickConfig shortStickConfig = JsonLoader.LoadFromFile<ShortStickConfig>("Data\\Configs\\ShortStickConfig.json");
 
             Texture2D dirt = content.Load<Texture2D>("blocks/dirt_block");
             Texture2D sand = content.Load<Texture2D>("blocks/sand_block");
@@ -65,7 +67,7 @@ namespace Nyvorn.Source.Game.States
             Dictionary<ItemId, Weapon> weapons = new()
             {
                 [ItemId.None] = new NullWeapon(nullWeaponTexture),
-                [ItemId.ShortStick] = new ShortStick(shortStickTexture)
+                [ItemId.ShortStick] = new ShortStick(shortStickTexture, shortStickConfig)
             };
 
             Player player = new Player(
@@ -86,10 +88,11 @@ namespace Nyvorn.Source.Game.States
             enemyRespawnController.SpawnInitial(enemies);
             List<WorldItem> worldItems = new()
             {
-                new WorldItem(ItemDefinitions.Get(ItemId.ShortStick), shortStickTexture, arenaConfig.InitialWeaponSpawn)
+                new WorldItem(ItemDefinitions.Get(ItemId.ShortStick), shortStickTexture, arenaConfig.InitialWeaponSpawn),
+                new WorldItem(ItemDefinitions.Get(ItemId.HealthPotion1), itemTextures[ItemId.HealthPotion1], arenaConfig.InitialWeaponSpawn + new Vector2(22f, 0f))
             };
-            Hotbar hotbar = new Hotbar(2);
-            Inventory inventory = new Inventory(10);
+            Hotbar hotbar = new Hotbar(4);
+            Inventory inventory = new Inventory(2);
 
             return new PlayingSession
             {

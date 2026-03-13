@@ -186,6 +186,11 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
             motor.ApplyKnockback(forceX, forceY);
         }
 
+        public bool TryHeal(int amount)
+        {
+            return combat.TryHeal(amount);
+        }
+
         void IHitSource.OnHitConnected()
         {
         }

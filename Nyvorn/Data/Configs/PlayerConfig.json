@@ -1,0 +1,12 @@
+{
+  "MoveSpeed": 90.0,
+  "JumpSpeed": 280.0,
+  "GravityScale": 1.0,
+  "DodgeSpeed": 230.0,
+  "DodgeFrameTime": 0.05,
+  "DodgeFrames": 7,
+  "DodgeCooldown": 0.3,
+  "AttackDuration": 0.3,
+  "HurtCooldown": 0.35,
+  "MaxHealth": 100
+}

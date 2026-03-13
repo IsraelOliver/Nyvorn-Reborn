@@ -176,5 +176,14 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
             hurtCooldownTimer = config.HurtCooldown;
             return true;
         }
+
+        public bool TryHeal(int amount)
+        {
+            if (!IsAlive || amount <= 0 || health >= config.MaxHealth)
+                return false;
+
+            health = System.Math.Min(config.MaxHealth, health + amount);
+            return true;
+        }
     }
 }

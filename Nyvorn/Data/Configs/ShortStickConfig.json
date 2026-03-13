@@ -1,0 +1,9 @@
+{
+  "FrameWidth": 32,
+  "FrameHeight": 32,
+  "PivotX": 10,
+  "PivotY": 20,
+  "AttackHitboxWidth": 16,
+  "AttackHitboxHeight": 12,
+  "AttackHitboxOffsetX": 2
+}

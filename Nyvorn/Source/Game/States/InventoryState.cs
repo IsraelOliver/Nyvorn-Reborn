@@ -19,6 +19,8 @@ namespace Nyvorn.Source.Game.States
         private KeyboardState previousKeyboard;
         private MouseState previousMouse;
         private readonly InventorySlot heldSlot = new InventorySlot();
+        private bool heldSlotOriginIsHotbar;
+        private int heldSlotOriginIndex = -1;
 
         public InventoryState(GraphicsDevice graphicsDevice, StateMachine stateMachine, PlayingSession session)
         {
@@ -103,6 +105,7 @@ namespace Nyvorn.Source.Game.States
 
             if (heldSlot.IsEmpty)
             {
+                RememberHeldOrigin(isHotbar, slotIndex);
                 heldSlot.CopyFrom(clickedSlot);
                 clickedSlot.Clear();
                 return;
@@ -112,6 +115,7 @@ namespace Nyvorn.Source.Game.States
             {
                 clickedSlot.CopyFrom(heldSlot);
                 heldSlot.Clear();
+                ClearHeldOrigin();
                 return;
             }
 
@@ -121,12 +125,16 @@ namespace Nyvorn.Source.Game.States
                 if (added > 0)
                     heldSlot.Set(heldSlot.ItemId, heldSlot.Quantity - added);
 
+                if (heldSlot.IsEmpty)
+                    ClearHeldOrigin();
+
                 return;
             }
 
             InventorySlot temp = clickedSlot.Clone();
             clickedSlot.CopyFrom(heldSlot);
             heldSlot.CopyFrom(temp);
+            RememberHeldOrigin(isHotbar, slotIndex);
         }
 
         private void DrawHeldItem(SpriteBatch spriteBatch, Point mousePosition)
@@ -167,8 +175,46 @@ namespace Nyvorn.Source.Game.States
             if (heldSlot.IsEmpty)
                 return;
 
-            if (session.TryStoreItem(heldSlot.ItemId, heldSlot.Quantity, preferInventory: true))
+            if (TryReturnHeldItemToOrigin())
+            {
                 heldSlot.Clear();
+                ClearHeldOrigin();
+                return;
+            }
+
+            if (session.TryStoreItem(heldSlot.ItemId, heldSlot.Quantity, preferInventory: true))
+            {
+                heldSlot.Clear();
+                ClearHeldOrigin();
+            }
+        }
+
+        private bool TryReturnHeldItemToOrigin()
+        {
+            if (heldSlotOriginIndex < 0)
+                return false;
+
+            InventorySlot targetSlot = heldSlotOriginIsHotbar
+                ? session.Hotbar.GetSlot(heldSlotOriginIndex)
+                : session.Inventory.GetSlot(heldSlotOriginIndex);
+
+            if (!targetSlot.IsEmpty)
+                return false;
+
+            targetSlot.CopyFrom(heldSlot);
+            return true;
+        }
+
+        private void RememberHeldOrigin(bool isHotbar, int slotIndex)
+        {
+            heldSlotOriginIsHotbar = isHotbar;
+            heldSlotOriginIndex = slotIndex;
+        }
+
+        private void ClearHeldOrigin()
+        {
+            heldSlotOriginIsHotbar = false;
+            heldSlotOriginIndex = -1;
         }
     }
 }

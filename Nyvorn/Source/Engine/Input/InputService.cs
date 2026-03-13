@@ -20,6 +20,7 @@ namespace Nyvorn.Source.Engine.Input
             bool jumpPressed = keyboard.IsKeyDown(Keys.Space);
             bool attackPressed = mouse.LeftButton == ButtonState.Pressed &&
                                 _prevMouse.LeftButton == ButtonState.Released;
+            bool useSelectedItemPressed = attackPressed;
             bool openInventoryPressed = keyboard.IsKeyDown(Keys.E) && !_prevKeyboard.IsKeyDown(Keys.E);
             bool openPausePressed = keyboard.IsKeyDown(Keys.Escape) && !_prevKeyboard.IsKeyDown(Keys.Escape);
             int hotbarSelectionIndex = -1;
@@ -32,6 +33,16 @@ namespace Nyvorn.Source.Engine.Input
                      (keyboard.IsKeyDown(Keys.NumPad2) && !_prevKeyboard.IsKeyDown(Keys.NumPad2)))
             {
                 hotbarSelectionIndex = 1;
+            }
+            else if ((keyboard.IsKeyDown(Keys.D3) && !_prevKeyboard.IsKeyDown(Keys.D3)) ||
+                     (keyboard.IsKeyDown(Keys.NumPad3) && !_prevKeyboard.IsKeyDown(Keys.NumPad3)))
+            {
+                hotbarSelectionIndex = 2;
+            }
+            else if ((keyboard.IsKeyDown(Keys.D4) && !_prevKeyboard.IsKeyDown(Keys.D4)) ||
+                     (keyboard.IsKeyDown(Keys.NumPad4) && !_prevKeyboard.IsKeyDown(Keys.NumPad4)))
+            {
+                hotbarSelectionIndex = 3;
             }
             bool ctrlDown = keyboard.IsKeyDown(Keys.LeftControl) || keyboard.IsKeyDown(Keys.RightControl);
             bool prevCtrlDown = _prevKeyboard.IsKeyDown(Keys.LeftControl) || _prevKeyboard.IsKeyDown(Keys.RightControl);
@@ -50,6 +61,7 @@ namespace Nyvorn.Source.Engine.Input
                 moveDir,
                 jumpPressed,
                 attackPressed,
+                useSelectedItemPressed,
                 openInventoryPressed,
                 openPausePressed,
                 hotbarSelectionIndex,

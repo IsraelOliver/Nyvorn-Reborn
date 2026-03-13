@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Nyvorn.Source.Gameplay.Items;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Nyvorn.Source.Gameplay.UI
 {
@@ -9,6 +10,7 @@ namespace Nyvorn.Source.Gameplay.UI
     {
         public const int SlotSize = 36;
         public const int SlotGap = 6;
+        private const float InventoryTextScale = 0.8f;
 
         private readonly Texture2D pixel;
         private readonly SpriteFont font;
@@ -76,13 +78,12 @@ namespace Nyvorn.Source.Gameplay.UI
 
         public Rectangle GetInventoryPanelBounds(int screenWidth, int screenHeight)
         {
-            const int padding = 14;
-            const int inventoryWidth = (5 * SlotSize) + (4 * SlotGap);
-            const int panelWidth = inventoryWidth + 24;
-            const int panelHeight = SlotSize + SlotGap + (2 * SlotSize) + SlotGap + 24;
+            const int hotbarWidth = (4 * SlotSize) + (3 * SlotGap);
+            const int panelWidth = hotbarWidth + 220;
+            const int panelHeight = 170;
             return new Rectangle(
-                padding - 8,
-                padding - 8,
+                (screenWidth - panelWidth) / 2,
+                screenHeight - panelHeight - 72,
                 panelWidth,
                 panelHeight);
         }
@@ -92,21 +93,29 @@ namespace Nyvorn.Source.Gameplay.UI
             Rectangle panel = GetInventoryPanelBounds(screenWidth, screenHeight);
             spriteBatch.Draw(pixel, panel, new Color(12, 12, 12, 220));
             spriteBatch.Draw(pixel, new Rectangle(panel.X - 2, panel.Y - 2, panel.Width + 4, panel.Height + 4), Color.Black * 0.9f);
-            spriteBatch.DrawString(font, "Inventario", new Vector2(panel.X + 12, panel.Y + 8), Color.White);
+            DrawInventoryText(spriteBatch, "Loadout", new Vector2(panel.X + 12, panel.Y + 8), Color.White);
 
-            int inventoryStartX = panel.X + 12;
-            int inventoryStartY = panel.Y + 34 + SlotSize + SlotGap;
-            DrawSlots(spriteBatch, inventory.Slots, inventoryStartX, inventoryStartY, 5, 2);
+            int hotbarStartX = panel.X + 12;
+            int hotbarStartY = panel.Y + 34;
+            DrawSlots(spriteBatch, hotbar.Slots, hotbarStartX, hotbarStartY, hotbar.Capacity, 1, selectedHotbarIndex, true);
+
+            int backpackStartY = hotbarStartY + SlotSize + 16;
+            DrawInventoryText(spriteBatch, "Mochila", new Vector2(panel.X + 12, backpackStartY - 16), new Color(210, 210, 210));
+            DrawSlots(spriteBatch, inventory.Slots, hotbarStartX, backpackStartY, inventory.Capacity, 1);
+
+            InventorySlot detailSlot = GetDetailSlot(hotbar, inventory, selectedHotbarIndex);
+            DrawDetailPanel(spriteBatch, detailSlot, panel.Right - 196, panel.Y + 12, 180, panel.Height - 24);
         }
 
         public bool TryGetSlotAtPoint(Hotbar hotbar, Inventory inventory, int screenWidth, int screenHeight, Point point, out bool isHotbar, out int slotIndex)
         {
             Rectangle panel = GetInventoryPanelBounds(screenWidth, screenHeight);
-            const int padding = 14;
+            int hotbarStartX = panel.X + 12;
+            int hotbarStartY = panel.Y + 34;
 
             for (int i = 0; i < hotbar.Capacity; i++)
             {
-                Rectangle bounds = GetSlotBounds(padding, padding, hotbar.Capacity, i);
+                Rectangle bounds = GetSlotBounds(hotbarStartX, hotbarStartY, hotbar.Capacity, i);
                 if (bounds.Contains(point))
                 {
                     isHotbar = true;
@@ -117,7 +126,7 @@ namespace Nyvorn.Source.Gameplay.UI
 
             for (int i = 0; i < inventory.Capacity; i++)
             {
-                Rectangle bounds = GetSlotBounds(panel.X + 12, panel.Y + 34 + SlotSize + SlotGap, 5, i);
+                Rectangle bounds = GetSlotBounds(panel.X + 12, panel.Y + 34 + SlotSize + 16, inventory.Capacity, i);
                 if (bounds.Contains(point))
                 {
                     isHotbar = false;
@@ -134,11 +143,12 @@ namespace Nyvorn.Source.Gameplay.UI
         private void DrawHotbar(SpriteBatch spriteBatch, Hotbar hotbar, int selectedHotbarIndex)
         {
             const int padding = 14;
+            int startX = padding;
+            int y = padding;
 
             for (int i = 0; i < hotbar.Capacity; i++)
             {
-                int x = padding + i * (SlotSize + SlotGap);
-                int y = padding;
+                int x = startX + i * (SlotSize + SlotGap);
                 DrawSlot(spriteBatch, hotbar.Slots[i], x, y, i == selectedHotbarIndex);
             }
         }
@@ -150,12 +160,25 @@ namespace Nyvorn.Source.Gameplay.UI
 
         private void DrawSlots(SpriteBatch spriteBatch, IReadOnlyList<InventorySlot> slots, int startX, int startY, int columns, int rows, int selectedIndex)
         {
+            DrawSlots(spriteBatch, slots, startX, startY, columns, rows, selectedIndex, false);
+        }
+
+        private void DrawSlots(SpriteBatch spriteBatch, IReadOnlyList<InventorySlot> slots, int startX, int startY, int columns, int rows, int selectedIndex, bool drawKeyLabels)
+        {
             for (int i = 0; i < slots.Count && i < columns * rows; i++)
             {
                 Rectangle slotBounds = GetSlotBounds(startX, startY, columns, i);
                 int x = slotBounds.X;
                 int y = slotBounds.Y;
                 DrawSlot(spriteBatch, slots[i], x, y, i == selectedIndex);
+
+                if (drawKeyLabels)
+                {
+                    string keyLabel = (i + 1).ToString();
+                    Vector2 labelPos = new Vector2(x + 4f, y + 2f);
+                    DrawInventoryText(spriteBatch, keyLabel, labelPos + new Vector2(1f, 1f), Color.Black);
+                    DrawInventoryText(spriteBatch, keyLabel, labelPos, new Color(210, 210, 210));
+                }
             }
         }
 
@@ -170,7 +193,10 @@ namespace Nyvorn.Source.Gameplay.UI
             if (slot.IsEmpty || !itemTextures.TryGetValue(slot.ItemId, out Texture2D itemTexture) || !ItemDefinitions.TryGet(slot.ItemId, out ItemDefinition definition))
                 return;
 
-            Rectangle iconRect = new Rectangle(x + 2, y + 2, 32, 32);
+            int iconSize = definition.Category == ItemCategory.Consumable ? 18 : 32;
+            int iconX = x + (SlotSize - iconSize) / 2;
+            int iconY = y + (SlotSize - iconSize) / 2;
+            Rectangle iconRect = new Rectangle(iconX, iconY, iconSize, iconSize);
             spriteBatch.Draw(itemTexture, iconRect, definition.SourceRectangle, Color.White);
 
             if (slot.Quantity > 1)
@@ -210,9 +236,188 @@ namespace Nyvorn.Source.Gameplay.UI
 
             string label = $"{currentHealth}/{maxHealth}";
             Vector2 size = font.MeasureString(label);
-            Vector2 textPos = new Vector2(x + (width - size.X) * 0.5f, y - size.Y - 2f);
+            Vector2 textPos = new Vector2(x + (width - size.X) * 0.5f, y + height + 2f);
             spriteBatch.DrawString(font, label, textPos + new Vector2(1f, 1f), Color.Black);
             spriteBatch.DrawString(font, label, textPos, Color.White);
+        }
+
+        private InventorySlot GetDetailSlot(Hotbar hotbar, Inventory inventory, int selectedHotbarIndex)
+        {
+            if (selectedHotbarIndex >= 0 && selectedHotbarIndex < hotbar.Capacity)
+            {
+                InventorySlot selected = hotbar.GetSlot(selectedHotbarIndex);
+                if (!selected.IsEmpty)
+                    return selected;
+            }
+
+            for (int i = 0; i < inventory.Capacity; i++)
+            {
+                InventorySlot slot = inventory.GetSlot(i);
+                if (!slot.IsEmpty)
+                    return slot;
+            }
+
+            for (int i = 0; i < hotbar.Capacity; i++)
+            {
+                InventorySlot slot = hotbar.GetSlot(i);
+                if (!slot.IsEmpty)
+                    return slot;
+            }
+
+            return null;
+        }
+
+        private void DrawDetailPanel(SpriteBatch spriteBatch, InventorySlot slot, int x, int y, int width, int height)
+        {
+            Rectangle panel = new Rectangle(x, y, width, height);
+            spriteBatch.Draw(pixel, panel, new Color(28, 28, 28, 220));
+            spriteBatch.Draw(pixel, new Rectangle(panel.X - 2, panel.Y - 2, panel.Width + 4, panel.Height + 4), new Color(18, 18, 18, 235));
+
+            const int textPadding = 10;
+            float contentWidth = panel.Width - (textPadding * 2);
+            DrawInventoryText(spriteBatch, "Detalhes", new Vector2(panel.X + textPadding, panel.Y + 8), Color.White);
+
+            if (slot == null || slot.IsEmpty || !ItemDefinitions.TryGet(slot.ItemId, out ItemDefinition definition))
+            {
+                DrawInventoryText(spriteBatch, "Nenhum item", new Vector2(panel.X + textPadding, panel.Y + 34), new Color(210, 210, 210));
+                return;
+            }
+
+            float textY = panel.Y + 34;
+            Vector2 linePosition = new Vector2(panel.X + textPadding, textY);
+
+            DrawInventoryText(spriteBatch, definition.Name, linePosition, Color.White);
+            textY += 16f;
+
+            textY += DrawWrappedInventoryText(spriteBatch, definition.Description, new Vector2(panel.X + textPadding, textY), contentWidth, new Color(210, 210, 210));
+            DrawInventoryText(spriteBatch, $"Categoria: {FormatLabel(definition.Category)}", new Vector2(panel.X + textPadding, textY), new Color(210, 210, 210));
+            textY += 15f;
+            DrawInventoryText(spriteBatch, $"Uso: {FormatLabel(definition.UseType)}", new Vector2(panel.X + textPadding, textY), new Color(210, 210, 210));
+            textY += 15f;
+            DrawInventoryText(spriteBatch, $"Qtd: {slot.Quantity}", new Vector2(panel.X + textPadding, textY), new Color(210, 210, 210));
+            textY += 15f;
+            DrawInventoryText(spriteBatch, definition.Stackable ? $"Pilha: {definition.MaxStack}" : "Pilha: 1", new Vector2(panel.X + textPadding, textY), new Color(210, 210, 210));
+            textY += 18f;
+
+            if (definition.HasDamage)
+            {
+                DrawInventoryText(spriteBatch, $"Dano: {definition.Damage}", new Vector2(panel.X + textPadding, textY), Color.White);
+                textY += 15f;
+            }
+
+            if (definition.HasDefense)
+            {
+                DrawInventoryText(spriteBatch, $"Defesa: {definition.Defense}", new Vector2(panel.X + textPadding, textY), Color.White);
+                textY += 15f;
+            }
+
+            if (definition.HasHealing)
+            {
+                DrawInventoryText(spriteBatch, $"Cura: {definition.HealAmount}", new Vector2(panel.X + textPadding, textY), Color.White);
+                textY += 15f;
+            }
+
+            if (definition.HasEffectSummary)
+            {
+                textY += DrawWrappedInventoryText(spriteBatch, $"Efeito: {definition.EffectSummary}", new Vector2(panel.X + textPadding, textY), contentWidth, new Color(210, 210, 210));
+            }
+
+            DrawInventoryText(spriteBatch, "E para organizar.", new Vector2(panel.X + textPadding, panel.Bottom - 30), new Color(210, 210, 210));
+            DrawInventoryText(spriteBatch, "T para dropar.", new Vector2(panel.X + textPadding, panel.Bottom - 16), new Color(210, 210, 210));
+        }
+
+        private void DrawInventoryText(SpriteBatch spriteBatch, string text, Vector2 position, Color color)
+        {
+            spriteBatch.DrawString(font, text, position, color, 0f, Vector2.Zero, InventoryTextScale, SpriteEffects.None, 0f);
+        }
+
+        private float DrawWrappedInventoryText(SpriteBatch spriteBatch, string text, Vector2 position, float maxWidth, Color color)
+        {
+            string wrapped = WrapInventoryText(text, maxWidth);
+            DrawInventoryText(spriteBatch, wrapped, position, color);
+            return MeasureWrappedInventoryTextHeight(wrapped) + 6f;
+        }
+
+        private string WrapInventoryText(string text, float maxWidth)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            string[] words = text.Split(' ');
+            StringBuilder builder = new();
+            StringBuilder line = new();
+
+            for (int i = 0; i < words.Length; i++)
+            {
+                string word = words[i];
+                string candidate = line.Length == 0 ? word : $"{line} {word}";
+                if (MeasureInventoryTextWidth(candidate) <= maxWidth)
+                {
+                    line.Clear();
+                    line.Append(candidate);
+                    continue;
+                }
+
+                if (builder.Length > 0)
+                    builder.Append('\n');
+
+                builder.Append(line);
+                line.Clear();
+                line.Append(word);
+            }
+
+            if (line.Length > 0)
+            {
+                if (builder.Length > 0)
+                    builder.Append('\n');
+
+                builder.Append(line);
+            }
+
+            return builder.ToString();
+        }
+
+        private float MeasureWrappedInventoryTextHeight(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return 0f;
+
+            int lineCount = 1;
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '\n')
+                    lineCount++;
+            }
+
+            return lineCount * (font.LineSpacing * InventoryTextScale);
+        }
+
+        private float MeasureInventoryTextWidth(string text)
+        {
+            return font.MeasureString(text).X * InventoryTextScale;
+        }
+
+        private static string FormatLabel(ItemCategory category)
+        {
+            return category switch
+            {
+                ItemCategory.Weapon => "Arma",
+                ItemCategory.Shield => "Escudo",
+                ItemCategory.Armor => "Armadura",
+                ItemCategory.Consumable => "Consumivel",
+                ItemCategory.Utility => "Utilitario",
+                _ => "Diverso"
+            };
+        }
+
+        private static string FormatLabel(ItemUseType useType)
+        {
+            return useType switch
+            {
+                ItemUseType.Equipable => "Equipavel",
+                ItemUseType.Consumable => "Consumivel",
+                _ => "Passivo"
+            };
         }
     }
 }

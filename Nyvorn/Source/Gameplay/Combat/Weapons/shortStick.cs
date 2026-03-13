@@ -5,9 +5,12 @@ namespace Nyvorn.Source.Gameplay.Combat.Weapons
 {
     public class ShortStick : Weapon
     {
-        public ShortStick(Texture2D texture)
-            : base(texture, frameW: 32, frameH: 32, pivot: new Point(10, 20))
+        private readonly ShortStickConfig config;
+
+        public ShortStick(Texture2D texture, ShortStickConfig config)
+            : base(texture, frameW: config.FrameWidth, frameH: config.FrameHeight, pivot: new Point(config.PivotX, config.PivotY))
         {
+            this.config = config;
             SetIdle();
         }
 
@@ -33,9 +36,9 @@ namespace Nyvorn.Source.Gameplay.Combat.Weapons
         
         public override Rectangle GetAttackHitbox(Vector2 handWorld, bool facingRight)
         {
-            int width = 16;
-            int height = 12;
-            int offset = 2;
+            int width = config.AttackHitboxWidth;
+            int height = config.AttackHitboxHeight;
+            int offset = config.AttackHitboxOffsetX;
 
             int x;
 

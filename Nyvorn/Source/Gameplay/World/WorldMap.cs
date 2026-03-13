@@ -61,6 +61,15 @@ namespace Nyvorn.Source.World
 
         public void GenerateFieldArena(int groundY, int safeZoneStart, int safeZoneEnd, int entranceGateTileX, int arenaStartTileX)
         {
+            if (Width <= 0 || Height <= 0)
+                return;
+
+            groundY = Math.Clamp(groundY, 0, Height - 1);
+            safeZoneStart = Math.Clamp(safeZoneStart, 0, Width - 1);
+            safeZoneEnd = Math.Clamp(safeZoneEnd, safeZoneStart, Width - 1);
+            entranceGateTileX = Math.Clamp(entranceGateTileX, 0, Width - 1);
+            arenaStartTileX = Math.Clamp(arenaStartTileX, entranceGateTileX, Width - 1);
+
             for (int y = 0; y < Height; y++)
                 for (int x = 0; x < Width; x++)
                     _tiles[x, y] = TileType.Empty;
@@ -83,7 +92,8 @@ namespace Nyvorn.Source.World
             for (int x = safeZoneStart; x <= safeZoneEnd; x++)
                 _tiles[x, groundY] = TileType.Sand;
 
-            for (int x = entranceGateTileX - 1; x < arenaStartTileX; x++)
+            int gateFillStart = Math.Clamp(entranceGateTileX - 1, 0, Width - 1);
+            for (int x = gateFillStart; x < arenaStartTileX; x++)
                 _tiles[x, groundY] = TileType.Stone;
 
             for (int x = arenaStartTileX; x < Width - 1; x++)
