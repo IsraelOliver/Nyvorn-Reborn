@@ -30,7 +30,8 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
                         new Rectangle(2 * frameW, 0 * frameH, frameW, frameH),
                         new Rectangle(3 * frameW, 0 * frameH, frameW, frameH),
                         new Rectangle(4 * frameW, 0 * frameH, frameW, frameH),
-                        new Rectangle(5 * frameW, 0 * frameH, frameW, frameH)
+                        new Rectangle(5 * frameW, 0 * frameH, frameW, frameH),
+                        new Rectangle(6 * frameW, 0 * frameH, frameW, frameH)
                     }
                 },
 
@@ -126,11 +127,13 @@ namespace Nyvorn.Source.Gameplay.Entities.Player
             new Vector2(12, 22),
             new Vector2(15, 20),
             new Vector2(12, 22),
-            new Vector2(8, 23)
+            new Vector2(8, 23),
+            new Vector2(6, 21)
         };
 
         static readonly Vector2[] WalkWeaponHandAnchors =
         {
+            new Vector2(7, 21),
             new Vector2(7, 21),
             new Vector2(7, 21),
             new Vector2(7, 21),
